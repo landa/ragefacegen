@@ -19,9 +19,8 @@ def detectObjects(image_path, path):
   storage = cvCreateMemStorage(0)
   cvClearMemStorage(storage)
   cvEqualizeHist(grayscale, grayscale)
-  cascade = cvLoadHaarClassifierCascade(
-    '/home/videator/Documents/haarcascade_frontalface_alt.xml',
-    cvSize(1,1))
+  cascade = cvLoadHaarClassifierCascade('haarcascade_frontalface_alt.xml',
+                                        cvSize(1,1))
   faces = cvHaarDetectObjects(grayscale, cascade, storage, 1.2, 2,
                              CV_HAAR_DO_CANNY_PRUNING, cvSize(50,50))
 
