@@ -3,8 +3,6 @@
 # troll.py
 
 # Face Detection using OpenCV. Replaces faces with troll faces.
-# Based on sample code from: http://python.pastebin.com/m76db1d6b
-
 # Usage: python trolls.py <image_file> <output_file>
 
 import sys, os, random, Image
