@@ -7,13 +7,14 @@
 
 # Usage: python trolls.py <image_file> <output_file>
 
-import sys, os, random
+import sys, os, random, Image
 from opencv.cv import *
 from opencv.highgui import *
 
-def detectObjects(image, path):
+def detectObjects(image_path, path):
   """Converts an image to grayscale and prints the locations of any 
      faces found"""
+  image = cvLoadImage(image_path);
   grayscale = cvCreateImage(cvSize(image.width, image.height), 8, 1)
   cvCvtColor(image, grayscale, CV_BGR2GRAY)
 
@@ -27,30 +28,35 @@ def detectObjects(image, path):
                              CV_HAAR_DO_CANNY_PRUNING, cvSize(50,50))
 
   if faces:
+    background = Image.open(image_path)
     counter = 0
     for f in faces:
       counter += 1
-      #cvRectangle(image, (f.x, f.y), (f.x+f.width, f.y+f.height), CV_RGB(255, 0, 0), 3, 8, 0)
       current_troll = trolls[counter % len(trolls)]
-      scaling_factor = 1.5
-      scaled_height, scaled_width = int(current_troll.rows/float(current_troll.cols)*f.width*scaling_factor), int(f.width*scaling_factor)
-      small_current_troll = cvCreateMat(scaled_height, scaled_width, CV_8UC3)
-      cvResize(current_troll, small_current_troll)
-      roi = image[f.y-f.height/4:f.y+small_current_troll.rows-f.height/4, f.x-f.width/4:f.x+small_current_troll.cols-f.width/4]
-      cvCopy(small_current_troll, roi)
-      cvSaveImage(path, image)
+      paste_troll_over_background(background, current_troll, (f.x, f.y), f.width)
       print("[(%d,%d) -> (%d,%d)]" % (f.x, f.y, f.x+f.width, f.y+f.height))
+    background.save(path)
+
+def paste_troll_over_background(background, troll, pos, face_width):
+  troll_face, troll_mask, shift_factors = troll
+  shift_x, shift_y = shift_factors
+  troll_width, troll_height = troll_face.size
+  scaling_factor = 1.5
+  scaled_width = int(face_width*scaling_factor)
+  scaled_height = int(troll_height/float(troll_width)*scaled_width)
+  troll_face = troll_face.resize((scaled_width, scaled_height))
+  troll_mask = troll_mask.resize((scaled_width, scaled_height))
+  pos = (pos[0] - scaled_width/shift_x, pos[1] - scaled_height/shift_y)
+  background.paste(troll_face, pos, troll_mask)
 
 def main():
-  image = cvLoadImage(sys.argv[1]);
-  troll = cvLoadImage('trolls/troll.jpg')
-  megusta = cvLoadImage('trolls/megusta.jpg')
-  youdontsay = cvLoadImage('trolls/youdontsay.jpg')
-  genius = cvLoadImage('trolls/genius.jpg')
   global trolls
-  trolls = [genius, youdontsay, troll, megusta]
+  trolls = []
+  shift_factors = {'troll': (8, 8), 'megusta': (5, 5), 'yaoming': (20, 4)}
+  for troll in shift_factors.keys():
+    trolls.append((Image.open('trolls/'+troll+'.png'), Image.open('trolls/masks/'+troll+'.png'), shift_factors[troll]))
   random.shuffle(trolls)
-  detectObjects(image, sys.argv[2])
+  detectObjects(sys.argv[1], sys.argv[2])
 
 if __name__ == "__main__":
   main()
